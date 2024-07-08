@@ -56,7 +56,7 @@ from superset.constants import CHANGE_ME_SECRET_KEY
 from superset.jinja_context import BaseTemplateProcessor
 from superset.key_value.types import JsonKeyValueCodec
 from superset.stats_logger import DummyStatsLogger
-from superset.superset_typing import CacheConfig
+from superset.typing import CacheConfig
 from superset.tasks.types import ExecutorType
 from superset.utils import core as utils
 from superset.utils.core import is_test, NO_TIME_RANGE, parse_boolean_string

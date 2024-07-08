@@ -15,7 +15,7 @@
 # specific language governing permissions and limitations
 # under the License.
 """Utility functions used across Superset"""
-
+#e.g.
 # pylint: disable=too-many-lines
 from __future__ import annotations
 
@@ -86,7 +86,7 @@ from superset.exceptions import (
     SupersetTimeoutException,
 )
 from superset.sql_parse import sanitize_clause
-from superset.superset_typing import (
+from superset.typing import (
     AdhocColumn,
     AdhocMetric,
     AdhocMetricColumn,
