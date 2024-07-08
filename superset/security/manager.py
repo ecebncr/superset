@@ -550,7 +550,7 @@ class SupersetSecurityManager(  # pylint: disable=too-many-public-methods
         return SupersetError(
             error_type=SupersetErrorType.DASHBOARD_SECURITY_ACCESS_ERROR,
             message="You don't have access to this dashboard.",
-            level=ErrorLevel.ERROR,
+            level=ErrorLevel.WARNING,
         )
 
     def get_chart_access_error_object(
@@ -567,7 +567,7 @@ class SupersetSecurityManager(  # pylint: disable=too-many-public-methods
         return SupersetError(
             error_type=SupersetErrorType.CHART_SECURITY_ACCESS_ERROR,
             message="You don't have access to this chart.",
-            level=ErrorLevel.ERROR,
+            level=ErrorLevel.WARNING,
         )
 
     @staticmethod
@@ -609,7 +609,7 @@ class SupersetSecurityManager(  # pylint: disable=too-many-public-methods
         return SupersetError(
             error_type=SupersetErrorType.DATASOURCE_SECURITY_ACCESS_ERROR,
             message=self.get_datasource_access_error_msg(datasource),
-            level=ErrorLevel.ERROR,
+            level=ErrorLevel.WARNING,
             extra={
                 "link": self.get_datasource_access_link(datasource),
                 "datasource": datasource.name,
@@ -638,7 +638,7 @@ class SupersetSecurityManager(  # pylint: disable=too-many-public-methods
         return SupersetError(
             error_type=SupersetErrorType.TABLE_SECURITY_ACCESS_ERROR,
             message=self.get_table_access_error_msg(tables),
-            level=ErrorLevel.ERROR,
+            level=ErrorLevel.WARNING,
             extra={
                 "link": self.get_table_access_link(tables),
                 "tables": [str(table) for table in tables],
@@ -1017,7 +1017,6 @@ class SupersetSecurityManager(  # pylint: disable=too-many-public-methods
                 == None,  # noqa: E711
             )
         )
-        self.get_session.commit()
         if deleted_count := pvms.delete():
             logger.info("Deleted %i faulty permissions", deleted_count)
 
@@ -1045,11 +1044,7 @@ class SupersetSecurityManager(  # pylint: disable=too-many-public-methods
                 self.auth_role_public,
                 merge=True,
             )
-
         self.create_missing_perms()
-
-        # commit role and view menu updates
-        self.get_session.commit()
         self.clean_perms()
 
     def _get_all_pvms(self) -> list[PermissionView]:
@@ -1122,7 +1117,6 @@ class SupersetSecurityManager(  # pylint: disable=too-many-public-methods
                 ):
                     role_from_permissions.append(permission_view)
         role_to.permissions = role_from_permissions
-        self.get_session.commit()
 
     def set_role(
         self,
@@ -1143,7 +1137,6 @@ class SupersetSecurityManager(  # pylint: disable=too-many-public-methods
             permission_view for permission_view in pvms if pvm_check(permission_view)
         ]
         role.permissions = role_pvms
-        self.get_session.commit()
 
     def _is_admin_only(self, pvm: PermissionView) -> bool:
         """
@@ -2257,7 +2250,7 @@ class SupersetSecurityManager(  # pylint: disable=too-many-public-methods
                 SupersetError(
                     error_type=SupersetErrorType.DASHBOARD_SECURITY_ACCESS_ERROR,
                     message=_("Guest user cannot modify chart payload"),
-                    level=ErrorLevel.ERROR,
+                    level=ErrorLevel.WARNING,
                 )
             )
 
@@ -2446,8 +2439,7 @@ class SupersetSecurityManager(  # pylint: disable=too-many-public-methods
 
         user_roles = [role.id for role in self.get_user_roles(g.user)]
         regular_filter_roles = (
-            self.get_session()
-            .query(RLSFilterRoles.c.rls_filter_id)
+            self.get_session.query(RLSFilterRoles.c.rls_filter_id)
             .join(RowLevelSecurityFilter)
             .filter(
                 RowLevelSecurityFilter.filter_type == RowLevelSecurityFilterType.REGULAR
@@ -2455,22 +2447,18 @@ class SupersetSecurityManager(  # pylint: disable=too-many-public-methods
             .filter(RLSFilterRoles.c.role_id.in_(user_roles))
         )
         base_filter_roles = (
-            self.get_session()
-            .query(RLSFilterRoles.c.rls_filter_id)
+            self.get_session.query(RLSFilterRoles.c.rls_filter_id)
             .join(RowLevelSecurityFilter)
             .filter(
                 RowLevelSecurityFilter.filter_type == RowLevelSecurityFilterType.BASE
             )
             .filter(RLSFilterRoles.c.role_id.in_(user_roles))
         )
-        filter_tables = (
-            self.get_session()
-            .query(RLSFilterTables.c.rls_filter_id)
-            .filter(RLSFilterTables.c.table_id == table.id)
+        filter_tables = self.get_session.query(RLSFilterTables.c.rls_filter_id).filter(
+            RLSFilterTables.c.table_id == table.id
         )
         query = (
-            self.get_session()
-            .query(
+            self.get_session.query(
                 RowLevelSecurityFilter.id,
                 RowLevelSecurityFilter.group_key,
                 RowLevelSecurityFilter.clause,
@@ -2673,12 +2661,9 @@ class SupersetSecurityManager(  # pylint: disable=too-many-public-methods
         :raises SupersetSecurityException: If the current user is not an owner
         """
 
-        # pylint: disable=import-outside-toplevel
-        from superset import db
-
         if self.is_admin():
             return
-        orig_resource = db.session.query(resource.__class__).get(resource.id)
+        orig_resource = self.get_session.query(resource.__class__).get(resource.id)
         owners = orig_resource.owners if hasattr(orig_resource, "owners") else []
 
         if g.user.is_anonymous or g.user not in owners:

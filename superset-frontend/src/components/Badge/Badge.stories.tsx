@@ -1,4 +1,3 @@
-
 /**
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
@@ -78,26 +77,26 @@ InteractiveBadge.argTypes = {
   status: {
     control: {
       type: 'select',
-      options: [undefined, ...STATUSES],
     },
+    options: [undefined, ...STATUSES],
   },
   size: {
     control: {
       type: 'select',
-      options: SIZES.options,
     },
+    options: SIZES.options,
   },
   color: {
     control: {
       type: 'select',
-      options: [undefined, ...COLORS.options],
     },
+    options: [undefined, ...COLORS.options],
   },
   count: {
     control: {
       type: 'select',
-      options: [undefined, ...Array(100).keys()],
     },
+    options: [undefined, ...Array(100).keys()],
   },
 };
 
